@@ -11,6 +11,8 @@ export const ErrorCode = Object.freeze({
   NOT_IMPLEMENTED: 'NOT_IMPLEMENTED',
   TIMEOUT: 'TIMEOUT',
   ELEMENT_NOT_FOUND: 'ELEMENT_NOT_FOUND',
+  ELEMENT_NOT_INTERACTABLE: 'ELEMENT_NOT_INTERACTABLE',
+  ACTION_FAILED: 'ACTION_FAILED',
   SELECTOR_NOT_REGISTERED: 'SELECTOR_NOT_REGISTERED',
   TAB_NOT_FOUND: 'TAB_NOT_FOUND',
   WINDOW_NOT_FOUND: 'WINDOW_NOT_FOUND',
@@ -75,6 +77,35 @@ export class TimeoutError extends BrowserEngineError {
 export class ElementNotFoundError extends BrowserEngineError {
   constructor(message, context = {}) {
     super(message, { code: ErrorCode.ELEMENT_NOT_FOUND, recoverable: true, context });
+  }
+}
+
+/**
+ * The element was found, but was not in a state that could be acted on — hidden, disabled,
+ * read-only, or zero-area. Recoverable: a page that is still settling often resolves this
+ * on its own, and the distinction from `ElementNotFoundError` is what tells a caller which
+ * of the two happened.
+ */
+export class ElementNotInteractableError extends BrowserEngineError {
+  constructor(message, context = {}) {
+    super(message, { code: ErrorCode.ELEMENT_NOT_INTERACTABLE, recoverable: true, context });
+  }
+}
+
+/**
+ * An action reached its target but the interaction itself did not take effect. Recoverable,
+ * because the usual cause is a page that moved under the action.
+ */
+export class ActionFailedError extends BrowserEngineError {
+  constructor(message, context = {}) {
+    super(message, { code: ErrorCode.ACTION_FAILED, recoverable: true, context });
+  }
+}
+
+/** A file could not be attached to an input. Never recoverable by retry alone. */
+export class UploadFailedError extends BrowserEngineError {
+  constructor(message, context = {}) {
+    super(message, { code: ErrorCode.UPLOAD_FAILED, recoverable: false, context });
   }
 }
 
