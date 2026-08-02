@@ -1,6 +1,7 @@
 import { Action } from './Action.js';
 import { ActionFailedError } from './../utils/Errors.js';
 import { ActivityType } from './../../../workflow/activities/ActivityType.js';
+import { WaitState } from './../dom/WaitState.js';
 
 /**
  * Type into an input, textarea, or contenteditable element.
@@ -18,6 +19,15 @@ import { ActivityType } from './../../../workflow/activities/ActivityType.js';
 export class TypeTextAction extends Action {
   constructor(options) {
     super({ ...options, type: ActivityType.Type });
+  }
+
+  /**
+   * Typing is the one case where `readonly` is a genuine blocker, so this action keeps the
+   * stricter requirement the pointer actions deliberately drop.
+   * @returns {string}
+   */
+  get requiredState() {
+    return WaitState.Interactable;
   }
 
   /**

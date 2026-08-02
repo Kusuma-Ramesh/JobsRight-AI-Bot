@@ -112,6 +112,17 @@ await describe('ElementFinder.waitFor', async () => {
     expect(await base.waitFor('#nope', { state: 'absent', timeout: 20 })).toBeNull();
   });
 
+  await it('separates clickable from interactable over readonly', async () => {
+    const readOnly = createElement({ tagName: 'input', id: 'date', attributes: { readonly: '' } });
+    const waiter = finder({ '#date': readOnly });
+    expect((await waiter.waitFor('#date', { state: 'clickable', timeout: 20 })).id).toBe('date');
+    await expect(waiter.waitFor('#date', { state: 'interactable', timeout: 20 })).toReject(ErrorCode.TIMEOUT);
+  });
+
+  await it('treats a disabled element as neither clickable nor interactable', async () => {
+    await expect(base.waitFor('#disabled', { state: 'clickable', timeout: 20 })).toReject(ErrorCode.TIMEOUT);
+  });
+
   await it('rejects an unsupported state instead of settling for merely present', async () => {
     await expect(base.waitFor('#hidden', { state: 'visable', timeout: 20 })).toReject(ErrorCode.INVALID_ARGUMENT);
   });

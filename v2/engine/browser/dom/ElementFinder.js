@@ -150,6 +150,8 @@ export class ElementFinder {
         return node !== null && this.validator.isVisible(node);
       case WaitState.Enabled:
         return node !== null && this.validator.isEnabled(node);
+      case WaitState.Clickable:
+        return node !== null && this.validator.isClickable(node);
       case WaitState.Interactable:
         return node !== null && this.validator.isInteractable(node);
       case WaitState.Present:

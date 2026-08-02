@@ -21,7 +21,7 @@ its own: callers pass locators in, and `v2/selectors/` will be where they are st
 | `DomEngine.js` | Façade. The public surface every caller uses. |
 | `SelectorEngine.js` | Resolves a `Selector` into live nodes; computes XPath and CSS paths. |
 | `ElementFinder.js` | Finds, waits, traverses, and converts nodes into `DomElement`. |
-| `ElementValidator.js` | Judges state: visible, enabled, in viewport, interactable. |
+| `ElementValidator.js` | Judges state: visible, enabled, disabled, in viewport, clickable, interactable. |
 | `DomSnapshot.js` | Serializable capture of the page at one moment. |
 | `WaitState.js` | The conditions `waitForElement` accepts, as an enum. |
 | `../models/Selector.js` | A locator, as data. |
@@ -70,6 +70,11 @@ a failure say *"present but hidden by opacity"* rather than *"not interactable"*
 
 Being scrolled out of view is deliberately **not** counted as invisible — the element is
 rendered, and a later phase can scroll to it. `isInViewport` answers that separately.
+
+Read-only is likewise kept apart from disabled. `isEnabled` requires both, but `isClickable`
+(and `WaitState.Clickable`) asks only for rendered-and-not-disabled, because a read-only
+field still takes clicks and focus — it is how most date pickers and combo boxes present
+their trigger.
 
 ### A malformed selector throws; a missing element does not
 `elementExists('<<<bad')` throws `INVALID_ARGUMENT`. Returning `false` would hide a typo

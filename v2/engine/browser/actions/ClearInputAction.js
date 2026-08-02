@@ -2,6 +2,7 @@ import { Action } from './Action.js';
 import { ActionFailedError } from './../utils/Errors.js';
 import { ActivityType } from './../../../workflow/activities/ActivityType.js';
 import { TypeTextAction } from './TypeTextAction.js';
+import { WaitState } from './../dom/WaitState.js';
 
 /**
  * Empty an input, textarea, or contenteditable element.
@@ -17,6 +18,14 @@ export class ClearInputAction extends Action {
   constructor(options) {
     super({ ...options, type: ActivityType.Type });
     this.typeText = new TypeTextAction(options);
+  }
+
+  /**
+   * Clearing writes to the field, so a read-only control is a genuine blocker here.
+   * @returns {string}
+   */
+  get requiredState() {
+    return WaitState.Interactable;
   }
 
   /**

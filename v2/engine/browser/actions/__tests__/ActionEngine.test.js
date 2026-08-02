@@ -60,7 +60,7 @@ await describe('ActionEngine pointer actions', async () => {
     const { engine: actions } = engine({ elements: { '#go': button } });
     const result = await actions.click('#go');
     expect(result.success).toBe(true);
-    expect(button.eventTypes()).toEqual(['pointerdown', 'mousedown', 'mouseup', 'pointerup', 'click']);
+    expect(button.eventTypes()).toEqual(['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
   });
 
   await it('reports a click the page cancelled', async () => {
@@ -91,6 +91,21 @@ await describe('ActionEngine pointer actions', async () => {
     const result = await actions.hover('#off');
     expect(result.success).toBe(true);
     expect(disabled.eventTypes()).toEqual(['pointerover', 'mouseover', 'mouseenter', 'mousemove']);
+  });
+
+  await it('clicks a read-only field, which is how date pickers and combo boxes open', async () => {
+    const trigger = createInteractiveElement({ tagName: 'input', id: 'date', value: '', attributes: { readonly: '' } });
+    const { engine: actions } = engine({ elements: { '#date': trigger } });
+    const result = await actions.click('#date');
+    expect(result.success).toBe(true);
+    expect(trigger.eventTypes().includes('click')).toBe(true);
+  });
+
+  await it('focuses and sends keys to a read-only field', async () => {
+    const trigger = createInteractiveElement({ tagName: 'input', id: 'date', value: '', attributes: { readonly: '' } });
+    const { engine: actions } = engine({ elements: { '#date': trigger } });
+    expect((await actions.focus('#date')).success).toBe(true);
+    expect((await actions.pressKey('ArrowDown', { selector: '#date' })).success).toBe(true);
   });
 
   await it('focuses an element and confirms focus actually landed', async () => {
@@ -142,6 +157,14 @@ await describe('ActionEngine text actions', async () => {
     expect(field.value).toBe('');
     expect(result.payload.clearedLength).toBe(12);
     expect(JSON.stringify(result).includes('Lovelace')).toBe(false);
+  });
+
+  await it('still refuses to type into a read-only field', async () => {
+    const field = createInteractiveElement({ tagName: 'input', id: 'date', value: '2026-01-01', attributes: { readonly: '' } });
+    const { engine: actions } = engine({ elements: { '#date': field } });
+    const result = await actions.typeText('#date', 'x');
+    expect(result.error.code).toBe(ErrorCode.ELEMENT_NOT_INTERACTABLE);
+    expect(field.value).toBe('2026-01-01');
   });
 
   await it('fails with ACTION_FAILED on an element that accepts no text', async () => {
