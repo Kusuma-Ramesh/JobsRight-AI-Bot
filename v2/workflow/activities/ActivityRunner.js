@@ -45,7 +45,14 @@ export class ActivityRunner {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       activity.status = ActivityStatus.Running;
-      lastResult = await this.execute(activity, attempt);
+      try {
+        lastResult = await this.execute(activity, attempt);
+      } catch (error) {
+        lastResult = ActivityResult.failure({
+          message: `Activity threw during attempt ${attempt}`,
+          error
+        });
+      }
 
       if (lastResult.success) {
         activity.status = ActivityStatus.Completed;
