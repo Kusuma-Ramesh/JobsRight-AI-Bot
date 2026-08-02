@@ -23,6 +23,7 @@ its own: callers pass locators in, and `v2/selectors/` will be where they are st
 | `ElementFinder.js` | Finds, waits, traverses, and converts nodes into `DomElement`. |
 | `ElementValidator.js` | Judges state: visible, enabled, in viewport, interactable. |
 | `DomSnapshot.js` | Serializable capture of the page at one moment. |
+| `WaitState.js` | The conditions `waitForElement` accepts, as an enum. |
 | `../models/Selector.js` | A locator, as data. |
 | `../models/DomElement.js` | A described element, as data. |
 
@@ -77,7 +78,10 @@ unattended run.
 
 The same applies to a wait condition: `waitForElement(sel, { state: 'visable' })` throws
 `INVALID_ARGUMENT` before the first poll, rather than silently degrading to "just be
-present" and succeeding against a hidden element.
+present" and succeeding against a hidden element. `WaitState` follows the shape of
+`ActivityStatus` and `WorkflowState` — frozen enum, frozen value list, guard — with
+lowercase values, since these are literals a caller passes in rather than persisted
+lifecycle states.
 
 ### Waiting is polling
 Not a `MutationObserver`: an observer fires on every mutation and would re-evaluate the same

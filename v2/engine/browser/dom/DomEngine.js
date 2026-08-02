@@ -4,6 +4,7 @@ import { ElementNotFoundError } from './../utils/Errors.js';
 import { ElementValidator } from './ElementValidator.js';
 import { Selector } from './../models/Selector.js';
 import { SelectorEngine } from './SelectorEngine.js';
+import { WaitState } from './WaitState.js';
 
 /**
  * The DOM layer's façade: locate and inspect elements, and nothing else.
@@ -86,9 +87,8 @@ export class DomEngine {
    *
    * @param {Selector|object|string} selector
    * @param {number|object} [timeout] Milliseconds, or an options object
-   *                                  `{ timeout, interval, state, root }`. `state` is
-   *                                  `'present'` (default), `'visible'`, `'enabled'`,
-   *                                  `'interactable'`, or `'absent'`.
+   *                                  `{ timeout, interval, state, root }`. `state` is a
+   *                                  `WaitState` value, `Present` by default.
    * @returns {Promise<DomElement|null>}
    * @throws {TimeoutError} `TIMEOUT`, naming the selector and the awaited state.
    * @throws {BrowserEngineError} `INVALID_ARGUMENT` for an unsupported state.
@@ -276,4 +276,5 @@ export class DomEngine {
   }
 }
 
+export { WaitState };
 export default DomEngine;

@@ -2,6 +2,7 @@ import { DomElement } from './../models/DomElement.js';
 import { ElementValidator } from './ElementValidator.js';
 import { Selector } from './../models/Selector.js';
 import { SelectorEngine } from './SelectorEngine.js';
+import { WAIT_STATES, WaitState, isWaitState } from './WaitState.js';
 import { BrowserEngineError, ElementNotFoundError, ErrorCode, TimeoutError } from './../utils/Errors.js';
 
 /**
@@ -23,9 +24,6 @@ export const DEFAULT_POLL_INTERVAL = 100;
 
 /** How long `waitFor` waits before giving up, in milliseconds. */
 export const DEFAULT_TIMEOUT = 15000;
-
-/** Conditions `waitFor` understands. */
-export const WaitState = Object.freeze(['present', 'visible', 'enabled', 'interactable', 'absent']);
 
 export class ElementFinder {
   /**
@@ -110,9 +108,9 @@ export class ElementFinder {
    *         support. Checked before the first poll, so a misspelled state fails
    *         immediately rather than resolving as soon as the element merely exists.
    */
-  async waitFor(selector, { timeout = null, interval = null, state = 'present', root = null } = {}) {
-    if (!WaitState.includes(state)) {
-      throw new BrowserEngineError(`Unknown wait state '${state}'; expected one of ${WaitState.join(', ')}.`, {
+  async waitFor(selector, { timeout = null, interval = null, state = WaitState.Present, root = null } = {}) {
+    if (!isWaitState(state)) {
+      throw new BrowserEngineError(`Unknown wait state '${state}'; expected one of ${WAIT_STATES.join(', ')}.`, {
         code: ErrorCode.INVALID_ARGUMENT,
         recoverable: false,
         context: { state }
@@ -125,7 +123,7 @@ export class ElementFinder {
 
     for (;;) {
       const node = this.selectorEngine.queryFirst(resolved, root);
-      if (this.satisfies(node, state)) return state === 'absent' ? null : this.describe(node, {});
+      if (this.satisfies(node, state)) return state === WaitState.Absent ? null : this.describe(node, {});
 
       if (Date.now() >= deadline) {
         throw new TimeoutError(`Timed out after ${timeout ?? resolved.timeout ?? this.timeout}ms waiting for ${resolved} to be ${state}.`, {
@@ -146,18 +144,18 @@ export class ElementFinder {
    */
   satisfies(node, state) {
     switch (state) {
-      case 'absent':
+      case WaitState.Absent:
         return node === null;
-      case 'visible':
+      case WaitState.Visible:
         return node !== null && this.validator.isVisible(node);
-      case 'enabled':
+      case WaitState.Enabled:
         return node !== null && this.validator.isEnabled(node);
-      case 'interactable':
+      case WaitState.Interactable:
         return node !== null && this.validator.isInteractable(node);
-      case 'present':
+      case WaitState.Present:
         return node !== null;
       default:
-        throw new BrowserEngineError(`Unknown wait state '${state}'; expected one of ${WaitState.join(', ')}.`, {
+        throw new BrowserEngineError(`Unknown wait state '${state}'; expected one of ${WAIT_STATES.join(', ')}.`, {
           code: ErrorCode.INVALID_ARGUMENT,
           recoverable: false,
           context: { state }
@@ -226,6 +224,8 @@ export class ElementFinder {
     });
   }
 }
+
+export { WaitState };
 
 function delay(ms) {
   return new Promise((resolve) => {
