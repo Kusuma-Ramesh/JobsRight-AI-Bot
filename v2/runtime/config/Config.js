@@ -42,7 +42,7 @@ export class Config {
    * @param {string} [source] Where the values came from, e.g. 'defaults', 'user'.
    */
   constructor(values = {}, source = 'defaults') {
-    this.values = deepFreeze({ ...DEFAULT_CONFIG, ...values });
+    this.values = deepFreeze(deepMerge(DEFAULT_CONFIG, values));
     this.source = source;
   }
 
@@ -74,7 +74,7 @@ export class Config {
    * @returns {Config}
    */
   withOverrides(overrides, source = 'override') {
-    return new Config({ ...this.values, ...overrides }, source);
+    return new Config(deepMerge(this.values, overrides), source);
   }
 
   toJSON() {
@@ -86,9 +86,26 @@ export class Config {
   }
 }
 
+/**
+ * Merge overrides into a base group by group. A shallow spread would replace a whole
+ * group, so overriding one timeout would delete every other timeout; arrays and
+ * primitives replace outright.
+ */
+function deepMerge(base, overrides) {
+  const merged = { ...base };
+  for (const [key, value] of Object.entries(overrides ?? {})) {
+    merged[key] = isPlainObject(base?.[key]) && isPlainObject(value) ? deepMerge(base[key], value) : value;
+  }
+  return merged;
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 function deepFreeze(object) {
   for (const value of Object.values(object)) {
-    if (value && typeof value === 'object' && !Object.isFrozen(value)) deepFreeze(value);
+    if (value && typeof value === 'object') deepFreeze(value);
   }
   return Object.freeze(object);
 }
