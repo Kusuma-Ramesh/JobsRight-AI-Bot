@@ -94,6 +94,9 @@ export class UrlDetector {
    * - a wildcard pattern — `'https://*.jobsright.ai/jobs/*'`;
    * - a full url — compared with `isSame`.
    *
+   * All three forms compare normalized urls, so `www.`, casing, a trailing slash, or a
+   * tracking parameter cannot hide a tab from any of them.
+   *
    * @param {string} url
    * @param {string} pattern
    * @returns {boolean}
@@ -108,10 +111,22 @@ export class UrlDetector {
     }
 
     if (pattern.includes('*')) {
-      return patternToRegExp(pattern).test(url);
+      return patternToRegExp(this.normalizePattern(pattern)).test(this.normalize(url));
     }
 
     return this.isSame(url, pattern);
+  }
+
+  /**
+   * Canonicalize a wildcard pattern the same way `normalize` canonicalizes a url, so both
+   * sides of the comparison are in the same form. Falls back to the raw pattern when it is
+   * too partial to parse.
+   *
+   * @param {string} pattern
+   * @returns {string}
+   */
+  normalizePattern(pattern) {
+    return this.normalize(pattern) || pattern;
   }
 
   /**
@@ -202,11 +217,17 @@ function stripHash(parsed) {
 
 /**
  * Translate a wildcard pattern into an anchored regular expression.
- * `*` matches any run of characters; every other character is literal.
+ *
+ * `*` matches any run of characters; every other character is literal. A trailing `/*` also
+ * matches nothing at all, so `'https://chatgpt.com/*'` still recognises the bare origin —
+ * normalization strips the trailing slash, and a pattern for a section should match that
+ * section's own page.
  */
 function patternToRegExp(pattern) {
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  return new RegExp(`^${escaped}$`, 'i');
+  const trailingWildcard = pattern.endsWith('/*');
+  const body = trailingWildcard ? pattern.slice(0, -2) : pattern;
+  const escaped = body.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+  return new RegExp(`^${escaped}${trailingWildcard ? '(/.*)?' : ''}$`, 'i');
 }
 
 export default UrlDetector;

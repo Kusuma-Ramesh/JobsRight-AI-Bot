@@ -254,7 +254,15 @@ export class BrowserRuntime {
     const tab = this.getKnownTab(role);
     if (!tab) return false;
     const patterns = this.patterns[role] ?? [];
-    const stillValid = await Promise.all(patterns.map((pattern) => this.tabDetector.isStillValid(tab, pattern)));
+
+    // With no patterns — a title-matched tab, or a role absent from an overridden pattern
+    // set — the tab still existing is the only claim that can be checked, and `[].some()`
+    // would otherwise report a perfectly open tab as gone.
+    const stillValid = await Promise.all(
+      patterns.length > 0
+        ? patterns.map((pattern) => this.tabDetector.isStillValid(tab, pattern))
+        : [this.tabDetector.isStillValid(tab)]
+    );
     const valid = stillValid.some(Boolean);
     if (!valid) this.knownTabs.delete(role);
     return valid;

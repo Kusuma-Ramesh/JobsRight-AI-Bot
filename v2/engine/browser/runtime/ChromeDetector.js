@@ -22,6 +22,13 @@ export const CHROMIUM_BRANDS = Object.freeze([
   { id: 'chromium', name: 'Chromium', hints: ['Chromium'], ua: /\bChromium\/(\d+)/ }
 ]);
 
+/**
+ * Brands that every Chromium build advertises. Edge, Brave, Opera, and Vivaldi all carry a
+ * `Chrome/` token in their user-agent, so these only identify the browser when nothing more
+ * specific matched.
+ */
+export const GENERIC_BRANDS = Object.freeze(['chrome', 'chromium']);
+
 /** Extension APIs the detection layer requires. */
 export const REQUIRED_APIS = Object.freeze(['tabs', 'windows']);
 
@@ -68,13 +75,14 @@ export class ChromeDetector {
       }
     }
 
-    // Chrome reports itself as both "Google Chrome" and "Chromium"; the specific brand wins.
-    if (detected.length > 1) {
-      const specific = detected.filter((entry) => entry.id !== 'chromium');
-      if (specific.length > 0) return specific;
-    }
+    // Every Chromium build advertises Chrome and Chromium alongside its own brand, so a
+    // specific match always wins; otherwise Edge would be reported as Google Chrome.
+    const specific = detected.filter((entry) => !GENERIC_BRANDS.includes(entry.id));
+    if (specific.length > 0) return specific;
 
-    return detected;
+    // Plain Chrome advertises both generic brands; report it once, as Chrome.
+    const chrome = detected.find((entry) => entry.id === 'chrome');
+    return chrome ? [chrome] : detected;
   }
 
   /**

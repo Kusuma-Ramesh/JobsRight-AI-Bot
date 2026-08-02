@@ -73,8 +73,28 @@ await describe('BrowserRuntime environment detection', async () => {
     expect((await bare.detectRunningChrome()).running).toBe(false);
   });
 
-  it.todo('identifies Edge, Brave, Opera, and Vivaldi from client hints');
-  it.todo('falls back to the user-agent string when client hints are unavailable');
+  await it('names Edge as Edge, not Chrome, when only the user-agent is available', async () => {
+    const edge = new ChromeDetector({
+      browserApi,
+      navigator: createFakeNavigator({
+        brands: [],
+        userAgent: 'Mozilla/5.0 AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
+      })
+    });
+    const browsers = await edge.detectInstalledBrowsers();
+    expect(browsers).toHaveLength(1);
+    expect(browsers[0].id).toBe('edge');
+  });
+
+  await it('reports plain Chrome once, despite it advertising two generic brands', async () => {
+    const chrome = new ChromeDetector({
+      browserApi,
+      navigator: createFakeNavigator({ brands: [{ brand: 'Google Chrome', version: '120' }, { brand: 'Chromium', version: '120' }] })
+    });
+    expect(await chrome.detectInstalledBrowsers()).toHaveLength(1);
+  });
+
+  it.todo('identifies Brave, Opera, and Vivaldi from client hints');
 });
 
 await describe('BrowserRuntime.detectWindows', async () => {
@@ -88,7 +108,18 @@ await describe('BrowserRuntime.detectWindows', async () => {
 });
 
 await describe('BrowserRuntime.verifyKnownTab', async () => {
-  it.todo('returns false and forgets the tab once the user closes it');
+  await it('keeps a tab that has no url patterns, checking only that it still exists', async () => {
+    const custom = new BrowserRuntime({ browserApi, patterns: { chatgpt: [] } });
+    custom.knownTabs.set('chatgpt', await custom.getActiveTab());
+    expect(await custom.verifyKnownTab('chatgpt')).toBe(true);
+  });
+
+  await it('forgets a tab the user closed', async () => {
+    const custom = runtime();
+    custom.knownTabs.set('chatgpt', { id: 999, url: 'https://chatgpt.com/' });
+    expect(await custom.verifyKnownTab('chatgpt')).toBe(false);
+    expect(custom.getKnownTab('chatgpt')).toBeNull();
+  });
 });
 
 report();

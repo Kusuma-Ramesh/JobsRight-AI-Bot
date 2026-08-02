@@ -38,6 +38,18 @@ await describe('UrlDetector.matches', async () => {
     expect(url.matches('https://jobsright.ai.evil.com/x', 'jobsright.ai')).toBe(false);
   });
 
+  await it('normalizes both sides of a wildcard, so www and casing cannot hide a tab', () => {
+    expect(url.matches('https://WWW.ChatGPT.com/c/abc?utm_source=x', 'https://chatgpt.com/c/*')).toBe(true);
+  });
+
+  await it('lets a trailing /* also match the section page itself', () => {
+    expect(url.matches('https://chatgpt.com', 'https://chatgpt.com/*')).toBe(true);
+  });
+
+  await it('matches a wildcard in the host', () => {
+    expect(url.matches('https://app.jobsright.ai/jobs/12', 'https://*.jobsright.ai/jobs/*')).toBe(true);
+  });
+
   it.todo('treats a full-url pattern as an exact normalized comparison');
 });
 
