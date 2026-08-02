@@ -31,6 +31,9 @@ engine/browser/
 │   ├── TabManager.js        tab discovery, matching, switching, lifecycle
 │   ├── PageManager.js       readiness, navigation, and in-page interaction
 │   └── SelectorResolver.js  selector key → live element, with ordered fallbacks
+├── runtime/    browser, window, and tab discovery (implemented)
+├── dom/        locating and inspecting elements — reads only (implemented)
+├── actions/    clicking, typing, scrolling, uploading, keys (implemented)
 ├── models/     pure, serializable observations
 │   ├── BrowserWindow.js
 │   ├── BrowserTab.js

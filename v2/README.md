@@ -10,9 +10,9 @@ knowledge about how to drive a specific browser application.
 The legacy scaffold under `src/` remains untouched and is not referenced by anything here.
 
 ## Status
-- **Overall progress:** 40%
-- **Current phase:** DOM Engine — completed
-- **Next phase:** Browser Actions
+- **Overall progress:** 48%
+- **Current phase:** Browser Actions — completed
+- **Next phase:** JobsRight Adapter
 
 ## Automation model
 Three browser applications participate in the automation:
@@ -44,7 +44,7 @@ aborted.
 ## Directory map
 | Path | Role |
 | --- | --- |
-| `engine/browser/` | Browser engine: runtime detection, DOM inspection, models, services. |
+| `engine/browser/` | Browser engine: runtime detection, DOM inspection, page interaction, models, services. |
 | `runtime/` | Session, state, events, config, and logging infrastructure. |
 | `controllers/` | One controller per external browser application. |
 | `workflow/` | Workflow engine, activities, and run state. |
