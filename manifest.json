@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "JobsRight AI Bot",
+  "version": "0.1.0",
+  "description": "Phase 1 placeholder scaffold for a Chrome extension.",
+  "permissions": [],
+  "host_permissions": [],
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.js"],
+      "css": ["src/content/content.css"]
+    }
+  ],
+  "action": {
+    "default_title": "JobsRight AI Bot",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "src/assets/icons/icon16.png",
+      "48": "src/assets/icons/icon48.png",
+      "128": "src/assets/icons/icon128.png"
+    }
+  },
+  "options_page": "src/options/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

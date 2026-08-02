@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JobsRight AI Bot</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="popup-shell">
+      <header class="header">
+        <div class="brand-block">
+          <div class="brand-icon" aria-hidden="true">🤖</div>
+          <div>
+            <h1>JobsRight AI Bot</h1>
+            <p>Application workflow assistant</p>
+          </div>
+        </div>
+        <div id="statusBadge" class="status-pill idle" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="statusText">Idle</span>
+        </div>
+      </header>
+
+      <section class="actions" aria-label="Automation controls">
+        <button id="startBtn" class="btn btn-primary">▶ Start Automation</button>
+        <button id="stopBtn" class="btn btn-secondary">■ Stop Automation</button>
+      </section>
+
+      <section class="stats-grid" aria-label="Current job summary">
+        <article class="stat-card">
+          <span class="label">Current Company</span>
+          <strong id="companyValue">N/A</strong>
+        </article>
+        <article class="stat-card">
+          <span class="label">Current Job Role</span>
+          <strong id="roleValue">N/A</strong>
+        </article>
+        <article class="stat-card">
+          <span class="label">Match Score</span>
+          <strong id="matchValue">--</strong>
+        </article>
+        <article class="stat-card">
+          <span class="label">Applications Submitted</span>
+          <strong id="submittedValue">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="label">Jobs Skipped</span>
+          <strong id="skippedValue">0</strong>
+        </article>
+      </section>
+
+      <section class="logs-panel" aria-label="Live logs">
+        <div class="logs-header">
+          <h2>Live Logs</h2>
+          <span class="logs-caption">UI-only activity feed</span>
+        </div>
+        <ul id="logList" class="log-list">
+          <li class="log-entry system">System initialized.</li>
+        </ul>
+      </section>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
