@@ -2,7 +2,8 @@ import { DomElement } from './../models/DomElement.js';
 import { ElementValidator } from './ElementValidator.js';
 import { Selector } from './../models/Selector.js';
 import { SelectorEngine } from './SelectorEngine.js';
-import { ElementNotFoundError, TimeoutError } from './../utils/Errors.js';
+import { WAIT_STATES, WaitState, isWaitState } from './WaitState.js';
+import { BrowserEngineError, ElementNotFoundError, ErrorCode, TimeoutError } from './../utils/Errors.js';
 
 /**
  * Finds elements and describes them as `DomElement` models.
@@ -51,16 +52,18 @@ export class ElementFinder {
    *                                   and most callers want text.
    * @param {boolean} [options.paths]  Compute `xpath` and `cssPath`. Off by default,
    *                                   because both walk the ancestor chain.
+   * @param {boolean} [options.values] Capture the current value of a form control. Off by
+   *                                   default: a value is user data.
    * @param {boolean} [options.required] Throw `ELEMENT_NOT_FOUND` instead of returning null.
    * @returns {DomElement|null}
    */
-  find(selector, { root = null, html = false, paths = false, required = false } = {}) {
+  find(selector, { root = null, html = false, paths = false, values = false, required = false } = {}) {
     const node = this.selectorEngine.queryFirst(selector, root);
     if (!node) {
       if (required) throw new ElementNotFoundError(`No element matched ${Selector.from(selector)}.`, { selector: String(Selector.from(selector)) });
       return null;
     }
-    return this.describe(node, { html, paths });
+    return this.describe(node, { html, paths, values });
   }
 
   /**
@@ -70,8 +73,8 @@ export class ElementFinder {
    * @param {object} [options] Same as `find`, minus `required`.
    * @returns {DomElement[]}
    */
-  findAll(selector, { root = null, html = false, paths = false } = {}) {
-    return this.selectorEngine.query(selector, root).map((node) => this.describe(node, { html, paths }));
+  findAll(selector, { root = null, html = false, paths = false, values = false } = {}) {
+    return this.selectorEngine.query(selector, root).map((node) => this.describe(node, { html, paths, values }));
   }
 
   /**
@@ -101,15 +104,26 @@ export class ElementFinder {
    * @param {Node} [options.root]
    * @returns {Promise<DomElement|null>} The element, or null for `state: 'absent'`.
    * @throws {TimeoutError} `TIMEOUT`, naming the selector and the state that was awaited.
+   * @throws {BrowserEngineError} `INVALID_ARGUMENT` for a state this layer does not
+   *         support. Checked before the first poll, so a misspelled state fails
+   *         immediately rather than resolving as soon as the element merely exists.
    */
-  async waitFor(selector, { timeout = null, interval = null, state = 'present', root = null } = {}) {
+  async waitFor(selector, { timeout = null, interval = null, state = WaitState.Present, root = null } = {}) {
+    if (!isWaitState(state)) {
+      throw new BrowserEngineError(`Unknown wait state '${state}'; expected one of ${WAIT_STATES.join(', ')}.`, {
+        code: ErrorCode.INVALID_ARGUMENT,
+        recoverable: false,
+        context: { state }
+      });
+    }
+
     const resolved = Selector.from(selector);
     const deadline = Date.now() + (timeout ?? resolved.timeout ?? this.timeout);
     const step = interval ?? this.pollInterval;
 
     for (;;) {
       const node = this.selectorEngine.queryFirst(resolved, root);
-      if (this.satisfies(node, state)) return state === 'absent' ? null : this.describe(node, {});
+      if (this.satisfies(node, state)) return state === WaitState.Absent ? null : this.describe(node, {});
 
       if (Date.now() >= deadline) {
         throw new TimeoutError(`Timed out after ${timeout ?? resolved.timeout ?? this.timeout}ms waiting for ${resolved} to be ${state}.`, {
@@ -130,17 +144,22 @@ export class ElementFinder {
    */
   satisfies(node, state) {
     switch (state) {
-      case 'absent':
+      case WaitState.Absent:
         return node === null;
-      case 'visible':
+      case WaitState.Visible:
         return node !== null && this.validator.isVisible(node);
-      case 'enabled':
+      case WaitState.Enabled:
         return node !== null && this.validator.isEnabled(node);
-      case 'interactable':
+      case WaitState.Interactable:
         return node !== null && this.validator.isInteractable(node);
-      case 'present':
-      default:
+      case WaitState.Present:
         return node !== null;
+      default:
+        throw new BrowserEngineError(`Unknown wait state '${state}'; expected one of ${WAIT_STATES.join(', ')}.`, {
+          code: ErrorCode.INVALID_ARGUMENT,
+          recoverable: false,
+          context: { state }
+        });
     }
   }
 
@@ -175,11 +194,16 @@ export class ElementFinder {
    * The one place a node becomes data. Everything the model exposes is read here, so a
    * caller never needs the node itself.
    *
+   * Both markup and form values are opt-in. A control's value is whatever the user typed —
+   * name, email, resume text — and a `DomElement` is serialized into workflow state and
+   * into snapshots under `v2/data/`, so capturing it by default would persist exactly the
+   * data that must not be stored.
+   *
    * @param {Element} node
-   * @param {object} [options] `{ html, paths }`
+   * @param {object} [options] `{ html, paths, values }`
    * @returns {DomElement}
    */
-  describe(node, { html = false, paths = false } = {}) {
+  describe(node, { html = false, paths = false, values = false } = {}) {
     const attributes = {};
     for (const attribute of Array.from(node.attributes ?? [])) attributes[attribute.name] = attribute.value;
 
@@ -195,11 +219,13 @@ export class ElementFinder {
       enabled: this.validator.isEnabled(node),
       xpath: paths ? this.selectorEngine.getXPath(node) : null,
       cssPath: paths ? this.selectorEngine.getCssPath(node) : null,
-      value: node.value ?? null,
+      value: values ? node.value ?? null : null,
       ref: node
     });
   }
 }
+
+export { WaitState };
 
 function delay(ms) {
   return new Promise((resolve) => {

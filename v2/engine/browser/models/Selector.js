@@ -22,9 +22,11 @@ export class Selector {
    * @param {string} [init.name]      Human-readable label used in errors and logs.
    * @param {number} [init.timeout]   Default wait, in milliseconds, when this selector is
    *                                  used with `waitForElement`.
-   * @param {string[]} [init.fallbacks] Alternative expressions tried in order when the
-   *                                  primary finds nothing. Page markup changes; a
+   * @param {Array<string|object|Selector>} [init.fallbacks] Alternatives tried in order
+   *                                  when the primary finds nothing. Page markup changes; a
    *                                  selector that can degrade beats one that just fails.
+   *                                  Each accepts every form `Selector.from` does, so a
+   *                                  fallback can be `'xpath=//button'` or its own model.
    * @param {string} [init.description]
    */
   constructor({ value, type = null, name = null, timeout = null, fallbacks = [], description = null } = {}) {
@@ -84,10 +86,22 @@ export class Selector {
 
   /**
    * Every expression to try, primary first.
+   *
+   * Fallbacks go through `Selector.from`, so they support exactly what the primary does —
+   * an `xpath=`/`css=` prefix, an object, or an instance. Treating them as bare values
+   * would read `'xpath=//button'` as a CSS expression and fail the query outright, which
+   * defeats the point of having a fallback.
+   *
    * @returns {Selector[]}
    */
   chain() {
-    return [this, ...this.fallbacks.map((value) => new Selector({ value, name: this.name }))];
+    return [
+      this,
+      ...this.fallbacks.map((fallback) => {
+        const selector = Selector.from(fallback);
+        return selector.name ? selector : new Selector({ ...selector.toJSON(), name: this.name });
+      })
+    ];
   }
 
   /**

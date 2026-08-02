@@ -6,9 +6,10 @@ import { ErrorCode } from './../../utils/Errors.js';
 const child = createElement({ tagName: 'span', text: 'Software Engineer' });
 const card = createElement({ tagName: 'div', id: 'job', attributes: { 'data-job-id': '42' }, text: 'Software Engineer', html: '<span>Software Engineer</span>', children: [child] });
 const submit = createElement({ tagName: 'button', id: 'submit', text: 'Apply' });
+const email = createElement({ tagName: 'input', id: 'email', value: 'candidate@example.test' });
 
 const document = createDocument({
-  elements: { '#job': card, '#submit': submit, '.card': [card, card] },
+  elements: { '#job': card, '#submit': submit, '#email': email, '.card': [card, card] },
   xpath: { '//div[@id="job"]': card },
   elementCount: 137,
   url: 'https://example.test/jobs/42',
@@ -114,6 +115,12 @@ await describe('DomEngine.captureDomSnapshot', async () => {
   await it('survives a JSON round-trip', () => {
     const snapshot = engine.captureDomSnapshot({ label: 'x' });
     expect(JSON.parse(JSON.stringify(snapshot)).label).toBe('x');
+  });
+
+  await it('never persists what the user typed into a form control', () => {
+    const snapshot = engine.captureDomSnapshot({ elements: { email: '#email' }, includeHtml: true });
+    expect(JSON.stringify(snapshot).includes('candidate@example.test')).toBe(false);
+    expect(snapshot.elements.email.value).toBeNull();
   });
 
   it.todo('records the viewport and scroll offset');
