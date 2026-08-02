@@ -10,6 +10,7 @@ const offscreen = createElement({ tagName: 'div', box: { x: 0, y: 2000, width: 1
 const disabled = createElement({ tagName: 'button', disabled: true });
 const child = createElement({ tagName: 'span', text: 'child' });
 const parent = createElement({ tagName: 'div', id: 'parent', children: [child] });
+const input = createElement({ tagName: 'input', id: 'email', value: 'candidate@example.test' });
 const submit = createElement({
   tagName: 'button',
   id: 'submit',
@@ -30,7 +31,7 @@ function finder(elements) {
   });
 }
 
-const base = finder({ '#submit': submit, '#hidden': hidden, '#disabled': disabled, '#parent': parent, '.row': [submit, submit] });
+const base = finder({ '#submit': submit, '#hidden': hidden, '#disabled': disabled, '#parent': parent, '#email': input, '.row': [submit, submit] });
 
 await describe('ElementFinder.find', async () => {
   await it('returns a serializable DomElement, not a live node', () => {
@@ -63,6 +64,12 @@ await describe('ElementFinder.find', async () => {
 
   await it('keeps the live node reachable but unserializable', () => {
     expect(base.find('#submit').ref).toBe(submit);
+  });
+
+  await it('does not capture what the user typed unless values is set', () => {
+    expect(base.find('#email').value).toBeNull();
+    expect(JSON.stringify(base.find('#email')).includes('candidate@example.test')).toBe(false);
+    expect(base.find('#email', { values: true }).value).toBe('candidate@example.test');
   });
 
   it.todo('computes xpath and cssPath only when paths is set');
@@ -103,6 +110,10 @@ await describe('ElementFinder.waitFor', async () => {
 
   await it('resolves for state absent when nothing matches', async () => {
     expect(await base.waitFor('#nope', { state: 'absent', timeout: 20 })).toBeNull();
+  });
+
+  await it('rejects an unsupported state instead of settling for merely present', async () => {
+    await expect(base.waitFor('#hidden', { state: 'visable', timeout: 20 })).toReject(ErrorCode.INVALID_ARGUMENT);
   });
 
   it.todo('honours a timeout carried on the selector itself');

@@ -48,6 +48,15 @@ await describe('SelectorEngine.query', async () => {
     expect(engine.queryFirst(new Selector({ value: '#missing', fallbacks: ['a.fallback'] }))).toBe(submit);
   });
 
+  await it('parses a fallback the same way as the primary, prefixes included', () => {
+    expect(engine.queryFirst(new Selector({ value: '#missing', fallbacks: ['xpath=//button[@id="submit"]'] }))).toBe(submit);
+  });
+
+  await it('accepts a fallback given as an object or an instance', () => {
+    expect(engine.queryFirst(new Selector({ value: '#missing', fallbacks: [new Selector({ value: '#submit' })] }))).toBe(submit);
+    expect(engine.queryFirst(new Selector({ value: '#missing', fallbacks: [{ value: '#submit' }] }))).toBe(submit);
+  });
+
   await it('reports a malformed expression as INVALID_ARGUMENT, not as an absence', () => {
     try {
       engine.queryFirst('<<<bad');

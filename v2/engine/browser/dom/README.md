@@ -52,7 +52,15 @@ with an `xpath=` or `css=` prefix. Callers never branch on dialect.
 
 A `Selector` also carries `fallbacks`: alternative expressions tried in order when the
 primary matches nothing. Page markup changes without notice, and a locator that can degrade
-gracefully beats one that simply fails the run.
+gracefully beats one that simply fails the run. A fallback accepts every form the primary
+does — a prefix, an object, or a `Selector` — so it cannot be misread as the wrong dialect.
+
+### User data is opt-in, everywhere
+Both `innerHTML` and a form control's `value` are captured only when explicitly requested.
+A value is whatever the user typed — name, email, resume text — and a `DomElement` travels
+into workflow state and into snapshots under `v2/data/`, so capturing either by default
+would persist exactly the data that must not be stored. Snapshots never capture values at
+all.
 
 ### "Not found" and "found but hidden" are different failures
 They have different causes and different fixes, so they are never collapsed into one
@@ -66,6 +74,10 @@ rendered, and a later phase can scroll to it. `isInViewport` answers that separa
 `elementExists('<<<bad')` throws `INVALID_ARGUMENT`. Returning `false` would hide a typo
 behind what looks like an absent element, and that class of bug is nearly invisible in an
 unattended run.
+
+The same applies to a wait condition: `waitForElement(sel, { state: 'visable' })` throws
+`INVALID_ARGUMENT` before the first poll, rather than silently degrading to "just be
+present" and succeeding against a hidden element.
 
 ### Waiting is polling
 Not a `MutationObserver`: an observer fires on every mutation and would re-evaluate the same

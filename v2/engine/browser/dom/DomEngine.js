@@ -46,7 +46,8 @@ export class DomEngine {
    * Find the first element matching a selector.
    *
    * @param {Selector|object|string} selector CSS or XPath; see `Selector.from`.
-   * @param {object} [options] `{ root, html, paths, required }`
+   * @param {object} [options] `{ root, html, paths, values, required }`. `html` and
+   *                           `values` are opt-in because both carry user data.
    * @returns {DomElement|null} Null when nothing matches, unless `required` is set.
    * @throws {ElementNotFoundError} `ELEMENT_NOT_FOUND` when `required` and nothing matches.
    * @throws {BrowserEngineError} `INVALID_ARGUMENT` when the expression is malformed.
@@ -59,7 +60,7 @@ export class DomEngine {
    * Find every element matching a selector.
    *
    * @param {Selector|object|string} selector
-   * @param {object} [options] `{ root, html, paths }`
+   * @param {object} [options] `{ root, html, paths, values }`
    * @returns {DomElement[]} Empty when nothing matches.
    */
   findElements(selector, options) {
@@ -90,6 +91,7 @@ export class DomEngine {
    *                                  `'interactable'`, or `'absent'`.
    * @returns {Promise<DomElement|null>}
    * @throws {TimeoutError} `TIMEOUT`, naming the selector and the awaited state.
+   * @throws {BrowserEngineError} `INVALID_ARGUMENT` for an unsupported state.
    */
   async waitForElement(selector, timeout = undefined) {
     const options = typeof timeout === 'object' && timeout !== null ? timeout : { timeout };
@@ -219,7 +221,8 @@ export class DomEngine {
    *
    * Pass `elements` to record the state of the locators a step depends on — that is what
    * makes a later failure diagnosable, since a missing label in the snapshot names the
-   * element that was not there.
+   * element that was not there. Form-control values are never captured here: a snapshot is
+   * persisted, and a value is whatever the user typed.
    *
    * `includeHtml` is off by default and should stay off unless a specific investigation
    * needs it: full markup carries resume text and personal data into wherever the snapshot
