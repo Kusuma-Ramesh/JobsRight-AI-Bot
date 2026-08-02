@@ -38,13 +38,16 @@ export class BrowserPage {
 
   /**
    * Whether this page and another describe the same document instance.
-   * Used to detect navigation between the start and end of an interaction.
+   * Used to detect navigation between the start and end of an interaction. An unknown
+   * `navigationId` on either side answers false, so a missing identity fails loudly
+   * instead of vacuously reporting a match.
    *
    * @param {BrowserPage} other
    * @returns {boolean}
    */
   isSameDocument(other) {
-    return Boolean(other) && this.tabId === other.tabId && this.navigationId === other.navigationId;
+    if (!other || this.navigationId == null || other.navigationId == null) return false;
+    return this.tabId === other.tabId && this.navigationId === other.navigationId;
   }
 
   toJSON() {
