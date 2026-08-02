@@ -4,10 +4,14 @@ import { ActivityType } from './../../../workflow/activities/ActivityType.js';
 /**
  * A single primary-button click.
  *
- * The full sequence is dispatched — `pointerdown`, `mousedown`, `mouseup`, `pointerup`,
+ * The full sequence is dispatched — `pointerdown`, `mousedown`, `pointerup`, `mouseup`,
  * `click` — not just `click`. Real pages listen at every stage: a menu that opens on
  * `mousedown` and a button that only enables after `pointerdown` both stay closed to a
  * lone `click` event.
+ *
+ * The order is the one Pointer Events specifies, each compatibility mouse event following
+ * its pointer counterpart. Inverting the release pair would leave a widget that arms on
+ * `pointerdown` and commits on `pointerup` reading an impossible state machine.
  */
 export class ClickAction extends Action {
   constructor(options) {
@@ -31,8 +35,8 @@ export class ClickAction extends Action {
 
     this.dispatchMouse(node, 'pointerdown', { button: 0 });
     this.dispatchMouse(node, 'mousedown', { button: 0, detail: 1 });
-    this.dispatchMouse(node, 'mouseup', { button: 0, detail: 1 });
     this.dispatchMouse(node, 'pointerup', { button: 0 });
+    this.dispatchMouse(node, 'mouseup', { button: 0, detail: 1 });
     const notCancelled = this.dispatchMouse(node, 'click', { button: 0, detail: 1 });
 
     return { selector: element.describe(), cancelled: !notCancelled };

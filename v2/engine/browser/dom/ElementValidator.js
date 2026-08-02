@@ -55,10 +55,37 @@ export class ElementValidator {
    */
   isEnabled(element) {
     if (!element) return false;
-    if (element.disabled === true) return false;
-    if (element.getAttribute?.('aria-disabled') === 'true') return false;
+    if (this.isDisabled(element)) return false;
     if (element.hasAttribute?.('readonly')) return false;
     return true;
+  }
+
+  /**
+   * Whether the element is disabled, ignoring `readonly`.
+   *
+   * Read-only and disabled are different conditions and only look alike for typing. A
+   * read-only field still takes clicks and focus — it is how date pickers and combo boxes
+   * present themselves — so folding it into "disabled" would make those widgets
+   * undrivable.
+   *
+   * @param {Element} element
+   * @returns {boolean}
+   */
+  isDisabled(element) {
+    if (!element) return true;
+    if (element.disabled === true) return true;
+    return element.getAttribute?.('aria-disabled') === 'true';
+  }
+
+  /**
+   * Whether the element can receive a click, a focus, or a keystroke: rendered and not
+   * disabled. Weaker than `isInteractable`, which also requires that it accept text.
+   *
+   * @param {Element} element
+   * @returns {boolean}
+   */
+  isClickable(element) {
+    return this.isVisible(element) && !this.isDisabled(element);
   }
 
   /**
@@ -94,21 +121,24 @@ export class ElementValidator {
    * — "found, but hidden by opacity" is actionable in a way that "not interactable" is not.
    *
    * @param {Element} element
-   * @returns {{ exists: boolean, visible: boolean, enabled: boolean, inViewport: boolean, interactable: boolean, reason: string|null }}
+   * @returns {{ exists: boolean, visible: boolean, enabled: boolean, disabled: boolean, inViewport: boolean, clickable: boolean, interactable: boolean, reason: string|null }}
    */
   inspect(element) {
     const exists = Boolean(element);
     const visible = exists && this.isVisible(element);
     const enabled = exists && this.isEnabled(element);
+    const disabled = exists && this.isDisabled(element);
     const inViewport = exists && this.isInViewport(element);
+    const clickable = visible && !disabled;
     const interactable = visible && enabled;
 
     let reason = null;
     if (!exists) reason = 'Element is not present in the document.';
     else if (!visible) reason = 'Element is present but not rendered (display, visibility, opacity, or zero area).';
-    else if (!enabled) reason = 'Element is visible but disabled or read-only.';
+    else if (disabled) reason = 'Element is visible but disabled.';
+    else if (!enabled) reason = 'Element is visible and clickable but read-only, so it accepts no text.';
 
-    return { exists, visible, enabled, inViewport, interactable, reason };
+    return { exists, visible, enabled, disabled, inViewport, clickable, interactable, reason };
   }
 
   /**

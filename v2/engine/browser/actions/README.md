@@ -46,10 +46,14 @@ Each is documented at its definition, with its failure codes.
 
 ### Nothing is touched unsighted
 Every action waits for its target and checks its state first. The required state is per
-action, not global, because a single rule would be wrong in both directions: a click needs
-an `Interactable` element, a hover only a `Visible` one — a disabled control can still show
-a tooltip explaining why it is disabled — and a file input needs only to be `Present`, since
-real upload controls are almost always hidden behind a styled button.
+action, not global, because a single rule would be wrong in every direction:
+
+| State | Actions | Why |
+| --- | --- | --- |
+| `Interactable` | `typeText`, `clearInput` | Writing text needs a field that accepts it. |
+| `Clickable` | click, double, right, `focus`, keys | Rendered and not disabled. A **read-only** field qualifies: it takes clicks and focus, and is how most date pickers and combo boxes present their trigger. Requiring `Interactable` here would make every one of them undrivable. |
+| `Visible` | `hover`, `scrollTo` | A disabled control can still show a tooltip. |
+| `Present` | `uploadFile` | Real file inputs are hidden behind a styled button. |
 
 ### "Never appeared" and "appeared but unusable" stay separate
 Resolution is two waits, not one. The first establishes whether the element ever existed
@@ -68,7 +72,9 @@ holds even for a bug.
 ### Event sequences, not single events
 A lone `click` event misses the menu that opens on `mousedown` and the button that enables
 on `pointerdown`; a lone `dblclick` misses both underlying clicks. Each action dispatches
-what a browser would.
+what a browser would, in the order Pointer Events specifies — each compatibility mouse event
+after its pointer counterpart, so a click is `pointerdown → mousedown → pointerup → mouseup
+→ click`.
 
 For typing, assigning `node.value` is not enough. React and similar frameworks install their
 own `value` setter on the element and track what they last wrote — a plain assignment leaves
@@ -106,7 +112,7 @@ exactly where contact details and resume text live.
 | Code | Meaning |
 | --- | --- |
 | `ELEMENT_NOT_FOUND` | Nothing matched within the timeout. |
-| `ELEMENT_NOT_INTERACTABLE` | Found, but hidden, disabled, read-only, or zero-area. |
+| `ELEMENT_NOT_INTERACTABLE` | Found, but hidden, disabled, zero-area — or, for the text actions only, read-only. |
 | `TIMEOUT` | A wait elapsed. |
 | `UPLOAD_FAILED` | The file could not be attached. |
 | `INVALID_ARGUMENT` | Malformed selector, or an unsupported wait state. |

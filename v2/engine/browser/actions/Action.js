@@ -42,14 +42,21 @@ export class Action {
   }
 
   /**
-   * The state the target must reach before this action runs. Overridden by actions with a
-   * weaker requirement — `hover` and `scrollTo` need a rendered element, not an enabled
-   * one, and refusing to scroll to a disabled element would be wrong.
+   * The state the target must reach before this action runs.
+   *
+   * `Clickable` — rendered and not disabled — rather than `Interactable`, which also
+   * demands the element accept text. A read-only field takes clicks, focus, and keystrokes
+   * perfectly well; it is how date pickers and combo boxes present themselves, and
+   * requiring `Interactable` here would make every one of them undrivable.
+   *
+   * Overridden in both directions: the text actions require `Interactable`, `hover` and
+   * `scrollTo` only `Visible` — a disabled control can still show a tooltip — and
+   * `uploadFile` only `Present`, since real file inputs are hidden.
    *
    * @returns {string} A `WaitState` value.
    */
   get requiredState() {
-    return WaitState.Interactable;
+    return WaitState.Clickable;
   }
 
   /**
